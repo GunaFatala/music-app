@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import YouTube, { YouTubeProps } from 'react-youtube';
-import { Home, Search, Library, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music, Search as SearchIcon, Loader2, Heart, ChevronDown } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music, Search as SearchIcon, Loader2, Heart } from 'lucide-react';
+import Sidebar from '../components/sidebar';
+import PlayerBar from '../components/PlayerBar';
+import FullScreenPlayer from '../components/FullScreenPlayer';
+import SongGrid from '../components/SongGrid';
 
 export default function MelodiaApp() {
   const [player, setPlayer] = useState<any>(null);
@@ -162,23 +166,12 @@ export default function MelodiaApp() {
       
       {/* 1. LAYOUT UTAMA (Sidebar & Main) */}
       <div className="flex flex-1 overflow-hidden">
-        
-        {/* SIDEBAR */}
-        <aside className="w-64 bg-black p-6 flex flex-col gap-6 hidden md:flex border-r border-gray-900 z-10">
-           <div className="text-2xl font-bold mb-4 flex items-center gap-2 text-white">
-             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><Music size={18} className="text-black" /></div>
-             Melodia
-           </div>
-           <nav className="flex flex-col gap-4 text-gray-400 font-bold text-sm">
-             <button onClick={() => setCurrentView('home')} className={`flex items-center gap-4 transition ${currentView === 'home' ? 'text-white' : 'hover:text-white'}`}><Home size={24} /> Home</button>
-             <button onClick={() => setCurrentView('home')} className="flex items-center gap-4 hover:text-white transition"><Search size={24} /> Search</button>
-             <button onClick={() => setCurrentView('library')} className={`flex items-center gap-4 transition ${currentView === 'library' ? 'text-white' : 'hover:text-white'}`}><Library size={24} /> Your Library</button>
-           </nav>
-           <div className="mt-auto bg-gray-900 p-4 rounded-lg">
-             <p className="text-xs text-gray-400 mb-1">Disimpan</p>
-             <p className="text-xl font-bold text-green-500">{likedSongs.length} Lagu</p>
-           </div>
-        </aside>
+
+        <Sidebar 
+          currentView={currentView} 
+          setCurrentView={setCurrentView} 
+          likedSongsCount={likedSongs.length} 
+        />
 
         {/* MAIN CONTENT AREA */}
         <main className="flex-1 bg-gradient-to-b from-[#1e1e1e] to-black p-8 overflow-y-auto z-0">
@@ -205,34 +198,15 @@ export default function MelodiaApp() {
                 {isLoading ? <><Loader2 className="animate-spin" /> Mencari...</> : searchQuery ? `Hasil: "${searchQuery}"` : "Selamat Datang 👋"}
               </h2>
               
-              {songList.length === 0 && !isLoading && (
-                 <div className="text-center text-gray-500 mt-20">
-                    <Music size={64} className="mx-auto mb-4 opacity-50"/>
-                    <p>Mulai cari lagu favoritmu di kolom pencarian atas.</p>
-                 </div>
-              )}
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {songList.map((song) => {
-                  const isLiked = likedSongs.some(s => s.id === song.id);
-                  const isActive = currentSong && currentSong.id === song.id;
-                  return (
-                    <div key={song.id} className="group relative bg-[#181818] p-4 rounded-lg hover:bg-[#282828] transition duration-300">
-                      <div onClick={() => playSong(song)} className="cursor-pointer relative mb-4 shadow-lg group-hover:scale-105 transition duration-300">
-                        <img src={song.cover} alt={song.title} className="w-full aspect-square object-cover rounded-md shadow-lg" />
-                        <button className={`absolute bottom-2 right-2 bg-green-500 rounded-full p-3 text-black shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 ${(isActive && isPlaying) ? 'opacity-100 translate-y-0' : ''}`}>
-                          {(isActive && isPlaying) ? <Pause fill="black" size={20}/> : <Play fill="black" size={20}/>}
-                        </button>
-                      </div>
-                      <button onClick={(e) => { e.stopPropagation(); toggleLike(song); }} className="absolute top-6 right-6 p-2 rounded-full bg-black/50 hover:bg-black/80 opacity-0 group-hover:opacity-100 transition">
-                        <Heart size={18} className={isLiked ? "fill-green-500 text-green-500" : "text-white"} />
-                      </button>
-                      <h3 className={`font-bold truncate text-base mb-1 ${isActive ? 'text-green-500' : 'text-white'}`}>{song.title.replace(/&quot;/g, '"')}</h3>
-                      <p className="text-sm text-gray-400 line-clamp-1">{song.artist}</p>
-                    </div>
-                  );
-                })}
-              </div>
+              <SongGrid 
+                songs={songList}
+                isLoading={isLoading}
+                currentSong={currentSong}
+                isPlaying={isPlaying}
+                onPlay={playSong}
+                toggleLike={toggleLike}
+                likedSongs={likedSongs}
+              />
             </>
           ) : (
             <>
@@ -257,104 +231,42 @@ export default function MelodiaApp() {
         </main>
       </div>
 
-      {/* 2. FULL SCREEN PLAYER OVERLAY (FITUR BARU) */}
-      {/* Muncul kalau isPlayerExpanded = true */}
-      <div className={`fixed inset-0 z-50 bg-gradient-to-b from-gray-900 via-black to-black text-white flex flex-col transition-transform duration-500 ease-in-out ${isPlayerExpanded ? 'translate-y-0' : 'translate-y-[110%]'}`}>
-         
-         {/* Tombol Tutup (Chevron Down) */}
-         <div className="p-6 flex justify-between items-center">
-            <button onClick={() => setIsPlayerExpanded(false)} className="hover:bg-white/10 p-2 rounded-full transition">
-              <ChevronDown size={32} />
-            </button>
-            <span className="text-xs font-bold tracking-widest text-gray-400">NOW PLAYING</span>
-            <div className="w-8"></div> {/* Spacer */}
-         </div>
-
-         {/* Konten Full Screen */}
-         <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-2xl mx-auto w-full">
-            {/* Cover Album Besar */}
-            <div className="w-full max-w-md aspect-square bg-gray-800 rounded-xl shadow-2xl mb-10 overflow-hidden relative">
-               <img src={currentSong?.cover} className="w-full h-full object-cover" />
-            </div>
-
-            {/* Judul & Artis */}
-            <div className="w-full flex justify-between items-end mb-6">
-               <div>
-                  <h1 className="text-3xl font-bold mb-2 line-clamp-1">{currentSong?.title}</h1>
-                  <p className="text-xl text-gray-400">{currentSong?.artist}</p>
-               </div>
-               <button onClick={() => currentSong && toggleLike(currentSong)}>
-                  <Heart size={32} className={isCurrentLiked ? "fill-green-500 text-green-500" : "text-gray-400"} />
-               </button>
-            </div>
-
-            {/* Slider Progress Besar */}
-            <div className="w-full mb-8">
-               <input type="range" min={0} max={duration || 100} value={currentTime} onChange={handleSeek} className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500 hover:accent-green-400" />
-               <div className="flex justify-between text-xs font-mono text-gray-400 mt-2">
-                 <span>{formatTime(currentTime)}</span>
-                 <span>{formatTime(duration)}</span>
-               </div>
-            </div>
-
-            {/* Kontrol Utama Besar */}
-            <div className="flex items-center justify-center gap-10">
-               <button onClick={playPrevSong} className="text-gray-400 hover:text-white transition transform active:scale-90"><SkipBack size={40} /></button>
-               <button onClick={() => togglePlay()} className="bg-green-500 text-black rounded-full p-6 hover:scale-110 transition shadow-xl active:scale-95">
-                  {isPlaying ? <Pause size={40} fill="black" /> : <Play size={40} fill="black" />}
-               </button>
-               <button onClick={playNextSong} className="text-gray-400 hover:text-white transition transform active:scale-90"><SkipForward size={40} /></button>
-            </div>
-         </div>
-      </div>
+     {/* 2. FULL SCREEN PLAYER OVERLAY */}
+      <FullScreenPlayer 
+        isExpanded={isPlayerExpanded}
+        onClose={() => setIsPlayerExpanded(false)}
+        currentSong={currentSong}
+        isPlaying={isPlaying}
+        togglePlay={togglePlay}
+        playNext={playNextSong}
+        playPrev={playPrevSong}
+        currentTime={currentTime}
+        duration={duration}
+        handleSeek={handleSeek}
+        toggleLike={toggleLike}
+        isCurrentLiked={isCurrentLiked}
+      />
 
       {/* 3. MINI PLAYER BAR (BAWAH) */}
       {/* Player Bar akan hilang kalau Full Screen sedang aktif */}
       {currentSong && !isPlayerExpanded && (
-        <div className="h-24 bg-[#181818] border-t border-[#282828] px-4 flex items-center justify-between z-40 transition-all">
-          
-          {/* AREA KLIK UNTUK EXPAND */}
-          <div 
-             onClick={() => setIsPlayerExpanded(true)} 
-             className="flex items-center gap-4 w-1/3 min-w-[150px] cursor-pointer group"
-          >
-             <div className="relative">
-                <img src={currentSong.cover} className={`w-14 h-14 rounded object-cover ${isPlaying ? 'animate-pulse' : ''}`} alt="cover" />
-                {/* Ikon panah atas saat hover biar user tau bisa diklik */}
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 rounded transition">
-                   <ChevronDown size={20} className="rotate-180 text-white" /> 
-                </div>
-             </div>
-             <div className="overflow-hidden">
-               <h4 className="text-sm font-bold text-white truncate group-hover:text-green-500 transition">{currentSong.title}</h4>
-               <p className="text-xs text-gray-400 truncate">{currentSong.artist}</p>
-             </div>
-             <button onClick={(e) => {e.stopPropagation(); toggleLike(currentSong);}} className="hover:scale-110 transition ml-2">
-                <Heart size={18} className={isCurrentLiked ? "fill-green-500 text-green-500" : "text-gray-400 hover:text-white"} />
-             </button>
-          </div>
-
-          {/* Kontrol Tengah */}
-          <div className="flex flex-col items-center justify-center gap-1 w-1/3 max-w-2xl">
-             <div className="flex items-center gap-6">
-                <button onClick={playPrevSong} className="text-gray-400 hover:text-white"><SkipBack size={20} fill="currentColor" /></button>
-                <button onClick={() => togglePlay()} className="bg-white text-black rounded-full p-2 hover:scale-105 transition active:scale-95">
-                  {isPlaying ? <Pause size={20} fill="black" /> : <Play size={20} fill="black" />}
-                </button>
-                <button onClick={playNextSong} className="text-gray-400 hover:text-white"><SkipForward size={20} fill="currentColor" /></button>
-             </div>
-             <div className="w-full flex items-center gap-2 text-xs font-mono text-gray-400 mt-1">
-               <span className="w-10 text-right">{formatTime(currentTime)}</span>
-               <input type="range" min={0} max={duration || 100} value={currentTime} onChange={handleSeek} className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500 hover:accent-green-400" />
-               <span className="w-10">{formatTime(duration)}</span>
-             </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 w-1/3 pr-4 hidden md:flex">
-             <button onClick={toggleMute} className="text-gray-400 hover:text-white">{isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}</button>
-             <input type="range" min={0} max={100} value={isMuted ? 0 : volume} onChange={handleVolumeChange} className="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-gray-400 hover:accent-green-500" />
-          </div>
-        </div>
+        <PlayerBar 
+          currentSong={currentSong}
+          isPlaying={isPlaying}
+          togglePlay={togglePlay}
+          playNext={playNextSong}
+          playPrev={playPrevSong}
+          currentTime={currentTime}
+          duration={duration}
+          handleSeek={handleSeek}
+          volume={volume}
+          handleVolumeChange={handleVolumeChange}
+          isMuted={isMuted}
+          toggleMute={toggleMute}
+          toggleLike={toggleLike}
+          isCurrentLiked={isCurrentLiked}
+          onExpand={() => setIsPlayerExpanded(true)}
+        />
       )}
 
       {/* Hidden Player Engine */}

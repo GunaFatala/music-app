@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* --- KODE BAWAAN NEXT.JS (JANGAN DIUBAH) --- */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -23,4 +24,43 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Tambahan biar scroll halus */
+  scroll-behavior: smooth;
+}
+
+/* --- TAMBAHAN BARU: CUSTOM SCROLLBAR (Dark Theme) --- */
+/* Ini aman ditambahkan di bawah dan tidak akan merusak layout */
+
+::-webkit-scrollbar {
+  width: 8px; /* Lebar scrollbar */
+  height: 8px; /* Tinggi horizontal */
+}
+
+::-webkit-scrollbar-track {
+  background: #000000; /* Warna jalur (hitam pekat) */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333; /* Warna batang (abu gelap) */
+  border-radius: 4px; /* Sudut bulat */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555555; /* Warna pas disorot mouse */
+}
+
+/* --- SELECTION COLOR (Saat teks diblok) --- */
+::selection {
+  background-color: #22c55e; /* Hijau Spotify */
+  color: black;
+}
+
+/* --- UTILITY: Hide Scrollbar --- */
+/* Dipakai kalau mau area scroll tapi batangnya hilang */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
